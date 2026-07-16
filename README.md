@@ -61,7 +61,9 @@ npm run dev                     # http://localhost:5173 (API-Proxy → Backend :
 ## Docker (lokaler Gesamtstack)
 
 ```bash
-docker compose up --build      # Frontend: http://localhost:8080
+./scripts/docker-up.sh         # Frontend: http://localhost:8080
+# oder direkt (vorher dot_clean -m . ausführen, s. Besonderheiten):
+docker compose up --build
 ```
 
 - `backend/Dockerfile` – Python 3.12-slim, non-root, SQLite in Volume `/data`
@@ -80,6 +82,11 @@ drei Workarounds sind deshalb eingebaut:
 3. **SQLite mit `NullPool`** (`backend/database.py`): Auf dem exFAT-Laufwerk werden
    lange offene Datei-Handles ungültig („attempt to write a readonly database“) –
    mit einer frischen Verbindung pro Request tritt das nicht auf.
+4. **Vor jedem Docker-Build `dot_clean -m .`** (macht `./scripts/docker-up.sh`
+   automatisch): macOS legt auf exFAT `._*`-Hilfsdateien an, an denen der
+   Docker-Kontext-Sender scheitert („failed to xattr“). Zusätzlich kopiert das
+   Backend-Dockerfile den Code mit `--chown=appuser`, weil Dateien von exFAT
+   Modus 700 haben und sonst nur root sie lesen dürfte.
 
 In CI (GitHub Actions) und auf EC2 sind diese Workarounds harmlos bzw. wirkungslos –
 dort gibt es normale Pfade und Dateisysteme.

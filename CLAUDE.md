@@ -37,7 +37,7 @@ Slack Webhook        → Nachricht bei Start / Success / Failure
 
 1. [x] Backend (FastAPI) lokal lauffähig + pytest grün
 2. [x] Frontend (React/Vite) mit Anbindung ans Backend
-3. [ ] Docker (Multi-Stage) für Frontend & Backend
+3. [x] Docker (Multi-Stage) für Frontend & Backend
 4. [ ] Terraform-Infra lokal `plan`/`apply` testen
 5. [ ] GitHub Actions Staging (Test-Gate + Deploy)
 6. [ ] GitHub Actions Production (Tag `v*`) + Slack

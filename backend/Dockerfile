@@ -9,12 +9,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
 # Nicht als root laufen; /data ist der Ablageort für die SQLite-DB (Volume)
 RUN useradd --create-home appuser \
     && mkdir /data \
     && chown appuser:appuser /data
+
+# --chown nötig: von exFAT kopierte Dateien haben Modus 700 und wären
+# sonst root-only – appuser könnte den Code nicht lesen
+COPY --chown=appuser:appuser . .
 USER appuser
 
 ENV DATABASE_URL=sqlite:////data/tasks.db
