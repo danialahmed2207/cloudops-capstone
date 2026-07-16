@@ -58,6 +58,16 @@ npm install
 npm run dev                     # http://localhost:5173 (API-Proxy → Backend :8000)
 ```
 
+## Docker (lokaler Gesamtstack)
+
+```bash
+docker compose up --build      # Frontend: http://localhost:8080
+```
+
+- `backend/Dockerfile` – Python 3.12-slim, non-root, SQLite in Volume `/data`
+- `frontend/Dockerfile` – Multi-Stage: Node-Build → nginx:alpine (nur statische Dateien)
+- `frontend/nginx.conf` – liefert die SPA aus und proxyt `/api` zum Backend-Container
+
 ## Besonderheiten dieser Dev-Umgebung (externe LaCie-Platte)
 
 Der Projektpfad enthält einen Doppelpunkt und die Platte ist exFAT –

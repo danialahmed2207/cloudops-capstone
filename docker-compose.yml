@@ -1,0 +1,19 @@
+# Lokaler Gesamtstack: docker compose up --build
+# Frontend: http://localhost:8080  (Nginx, leitet /api intern ans Backend)
+# Backend:  nur im Docker-Netz erreichbar (kein Host-Port nötig)
+
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - db-data:/data          # SQLite überlebt Container-Neustarts
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"              # auf EC2 später "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:
