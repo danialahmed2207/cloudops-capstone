@@ -1,0 +1,67 @@
+name: Staging
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest
+
+  deploy-staging:
+    needs: test          # <- Test-Gate: Deploy nur, wenn Tests grün sind
+    runs-on: ubuntu-latest
+    env:
+      SSH_USER: ubuntu
+      STAGING_IP: ${{ secrets.EC2_IP_STAGING }}
+    steps:
+      - name: Slack – started
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {"text": "🚀 STAGING gestartet – ${{ github.actor }} / ${{ github.repository }}"}
+
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$STAGING_IP" >> ~/.ssh/known_hosts
+
+      - name: Deploy (Platzhalter – hier Docker/Nginx-Deploy einbauen)
+        run: |
+          ssh -i ~/.ssh/id_rsa $SSH_USER@$STAGING_IP "echo 'Deploy-Schritt hier ergaenzen'"
+
+      - name: Slack – success
+        if: ${{ success() }}
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {"text": "✅ STAGING erfolgreich – ${{ github.actor }}"}
+
+      - name: Slack – failure
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {"text": "❌ STAGING fehlgeschlagen – bitte Logs pruefen"}

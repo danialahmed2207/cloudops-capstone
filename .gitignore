@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# SQLite (lokale Dev-Datenbank nie committen)
+*.db
+
+# Node / Vite
+node_modules/
+dist/
+
+# Terraform (State NIE committen!)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+
+# OS / Editor
+.DS_Store
+._*
+.env
