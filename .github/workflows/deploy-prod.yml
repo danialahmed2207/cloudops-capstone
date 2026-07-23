@@ -1,0 +1,68 @@
+name: Production
+
+on:
+  push:
+    tags: ["v*"]          # <- Prod nur bei Version-Tag (z. B. v1.0.0)
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest
+
+  deploy-prod:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      SSH_USER: ubuntu
+      PROD_IPS: ${{ secrets.EC2_IPS_PROD }}   # mehrere IPs, leerzeichen-getrennt
+    steps:
+      - name: Slack – started
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {"text": "🚀 PRODUCTION gestartet (Tag: ${{ github.ref_name }}) – ${{ github.actor }}"}
+
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Deploy auf alle Prod-Server (Schleife)
+        run: |
+          for IP in $PROD_IPS; do
+            echo "Deploy auf $IP"
+            ssh-keyscan -H "$IP" >> ~/.ssh/known_hosts
+            ssh -i ~/.ssh/id_rsa $SSH_USER@$IP "echo 'Deploy-Schritt hier ergaenzen'"
+          done
+
+      - name: Slack – success
+        if: ${{ success() }}
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {"text": "✅ PRODUCTION erfolgreich (Tag: ${{ github.ref_name }})"}
+
+      - name: Slack – failure
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {"text": "❌ PRODUCTION fehlgeschlagen (Tag: ${{ github.ref_name }}) – Logs pruefen"}
